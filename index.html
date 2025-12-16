@@ -4,7 +4,13 @@
 <meta charset="UTF-8">
 <title>Ro'an Terpadu</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- EXCEL -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<!-- PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
 <style>
 body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#f4f6f8}
@@ -20,6 +26,7 @@ tr:nth-child(even){background:#fafafa}
 .jumat{font-weight:bold;color:#0f4c75}
 .minggu{font-style:italic;color:#777}
 footer{text-align:center;font-size:12px;margin:12px 0;color:#777}
+@media print {.controls{display:none}}
 </style>
 </head>
 
@@ -39,6 +46,8 @@ footer{text-align:center;font-size:12px;margin:12px 0;color:#777}
 <button onclick="render()">Tampilkan</button>
 <button onclick="exportCSV()">CSV</button>
 <button onclick="exportExcel()">Excel</button>
+<button onclick="exportPDF()">PDF</button>
+<button onclick="window.print()">Print</button>
 </div>
 
 <table id="tabel">
@@ -52,70 +61,70 @@ footer{text-align:center;font-size:12px;margin:12px 0;color:#777}
 </main>
 
 <script>
-// ================= AMBIL ELEMENT (WAJIB) =================
+// ===== AMBIL ELEMENT =====
 const bulan = document.getElementById("bulan");
 const tahun = document.getElementById("tahun");
 const cari  = document.getElementById("cari");
 const tbody = document.querySelector("#tabel tbody");
 
-// ================= DATA =================
-const komplek = ["A","B","C","D","E","F","G","H","I","J"];
-const data = [];
+// ===== DATA =====
+const komplek=["A","B","C","D","E","F","G","H","I","J"];
+const data=[];
 
-let d = new Date(2025,11,1);
-const end = new Date(2029,11,31);
+let d=new Date(2025,11,1);
+const end=new Date(2029,11,31);
 
-let dailyIndex = 4;   // E
-let fridayIndex = 4;  // E
+let dailyIndex=4;   // E
+let fridayIndex=4;  // E
 
-while(d <= end){
-  const day = d.getDay();
-  let petugas = "";
+while(d<=end){
+  const day=d.getDay();
+  let petugas="";
 
-  if(day === 0){
-    petugas = "Pengurus kebersihan";
-  }else if(day === 5){
-    petugas = komplek[fridayIndex % 10];
+  if(day===0){
+    petugas="Pengurus kebersihan";
+  }else if(day===5){
+    petugas=komplek[fridayIndex%10];
     fridayIndex++;
   }else{
-    petugas = komplek[dailyIndex % 10];
+    petugas=komplek[dailyIndex%10];
     dailyIndex++;
   }
 
   data.push({
-    tanggal: d.toLocaleDateString("id-ID"),
-    hari: d.toLocaleDateString("id-ID",{weekday:"long"}),
+    tanggal:d.toLocaleDateString("id-ID"),
+    hari:d.toLocaleDateString("id-ID",{weekday:"long"}),
     petugas,
-    bulan: d.getMonth(),
-    tahun: d.getFullYear(),
+    bulan:d.getMonth(),
+    tahun:d.getFullYear(),
     day
   });
 
-  d.setDate(d.getDate() + 1);
+  d.setDate(d.getDate()+1);
 }
 
-// ================= FILTER =================
-const bulanNama = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-bulanNama.forEach((b,i)=>bulan.innerHTML += `<option value="${i}">${b}</option>`);
-for(let y=2025;y<=2029;y++) tahun.innerHTML += `<option value="${y}">${y}</option>`;
+// ===== FILTER =====
+const bulanNama=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+bulanNama.forEach((b,i)=>bulan.innerHTML+=`<option value="${i}">${b}</option>`);
+for(let y=2025;y<=2029;y++) tahun.innerHTML+=`<option value="${y}">${y}</option>`;
 
-bulan.value = 11;
-tahun.value = 2025;
+bulan.value=11;
+tahun.value=2025;
 
-// ================= RENDER =================
+// ===== RENDER =====
 function render(){
-  tbody.innerHTML = "";
-  const q = cari.value.toUpperCase();
+  tbody.innerHTML="";
+  const q=cari.value.toUpperCase();
 
-  data.filter(x =>
-    x.bulan == bulan.value &&
-    x.tahun == tahun.value &&
-    (q === "" || x.petugas.toUpperCase().includes(q))
+  data.filter(x=>
+    x.bulan==bulan.value &&
+    x.tahun==tahun.value &&
+    (q==="" || x.petugas.toUpperCase().includes(q))
   ).forEach(x=>{
-    const tr = document.createElement("tr");
-    if(x.day === 5) tr.className = "jumat";
-    if(x.day === 0) tr.className = "minggu";
-    tr.innerHTML = `
+    const tr=document.createElement("tr");
+    if(x.day===5) tr.className="jumat";
+    if(x.day===0) tr.className="minggu";
+    tr.innerHTML=`
       <td>${x.tanggal}</td>
       <td>${x.hari}</td>
       <td>${x.petugas}</td>`;
@@ -123,30 +132,56 @@ function render(){
   });
 }
 
-// ================= EXPORT =================
+// ===== EXPORT CSV =====
 function exportCSV(){
-  let csv = "Tanggal,Hari,Petugas\n";
+  let csv="Tanggal,Hari,Petugas\n";
   document.querySelectorAll("tbody tr").forEach(r=>{
-    csv += `${r.children[0].innerText},${r.children[1].innerText},${r.children[2].innerText}\n`;
+    csv+=`${r.children[0].innerText},${r.children[1].innerText},${r.children[2].innerText}\n`;
   });
   download(csv,"jadwal_roan.csv","text/csv");
 }
 
+// ===== EXPORT EXCEL =====
 function exportExcel(){
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.table_to_sheet(document.getElementById("tabel"));
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.table_to_sheet(document.getElementById("tabel"));
   XLSX.utils.book_append_sheet(wb,ws,"Jadwal");
-  XLSX.writeFile(wb,"jadwal_roan.xlsx");
+  XLSX.writeFile(wb,`jadwal_roan_${bulan.value+1}_${tahun.value}.xlsx`);
 }
 
-function download(content,filename,type){
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([content],{type}));
-  a.download = filename;
+// ===== EXPORT PDF =====
+function exportPDF(){
+  const { jsPDF }=window.jspdf;
+  const doc=new jsPDF();
+
+  doc.setFontSize(14);
+  doc.text("Jadwal Ro'an TPS",14,15);
+  doc.setFontSize(10);
+  doc.text(`Bulan: ${bulan.options[bulan.selectedIndex].text} ${tahun.value}`,14,22);
+
+  doc.autoTable({
+    startY:28,
+    head:[["Tanggal","Hari","Petugas"]],
+    body:[...document.querySelectorAll("tbody tr")].map(r=>[
+      r.children[0].innerText,
+      r.children[1].innerText,
+      r.children[2].innerText
+    ]),
+    styles:{fontSize:9}
+  });
+
+  doc.save(`jadwal_roan_${bulan.value+1}_${tahun.value}.pdf`);
+}
+
+// ===== HELPER =====
+function download(content,name,type){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([content],{type}));
+  a.download=name;
   a.click();
 }
 
-// ================= AUTO LOAD =================
+// ===== AUTO LOAD =====
 render();
 </script>
 
