@@ -52,55 +52,103 @@ footer{text-align:center;font-size:12px;margin:12px 0;color:#777}
 </main>
 
 <script>
-/* ===================== DATA ===================== */
-const komplek=["A","B","C","D","E","F","G","H","I","J"];
-const data=[];
+// ================= AMBIL ELEMENT (WAJIB) =================
+const bulan = document.getElementById("bulan");
+const tahun = document.getElementById("tahun");
+const cari  = document.getElementById("cari");
+const tbody = document.querySelector("#tabel tbody");
 
-let d=new Date(2025,11,1);
-const end=new Date(2029,11,31);
+// ================= DATA =================
+const komplek = ["A","B","C","D","E","F","G","H","I","J"];
+const data = [];
 
-let dailyIndex=4;   // E
-let fridayIndex=4;  // E
+let d = new Date(2025,11,1);
+const end = new Date(2029,11,31);
 
-while(d<=end){
-  const day=d.getDay();
-  let petugas="";
+let dailyIndex = 4;   // E
+let fridayIndex = 4;  // E
 
-  if(day===0){
-    petugas="Pengurus kebersihan";
-  }else if(day===5){
-    petugas=komplek[fridayIndex%10];
+while(d <= end){
+  const day = d.getDay();
+  let petugas = "";
+
+  if(day === 0){
+    petugas = "Pengurus kebersihan";
+  }else if(day === 5){
+    petugas = komplek[fridayIndex % 10];
     fridayIndex++;
   }else{
-    petugas=komplek[dailyIndex%10];
+    petugas = komplek[dailyIndex % 10];
     dailyIndex++;
   }
 
   data.push({
-    tanggal:d.toLocaleDateString("id-ID"),
-    hari:d.toLocaleDateString("id-ID",{weekday:"long"}),
+    tanggal: d.toLocaleDateString("id-ID"),
+    hari: d.toLocaleDateString("id-ID",{weekday:"long"}),
     petugas,
-    bulan:d.getMonth(),
-    tahun:d.getFullYear(),
+    bulan: d.getMonth(),
+    tahun: d.getFullYear(),
     day
   });
 
-  d.setDate(d.getDate()+1);
+  d.setDate(d.getDate() + 1);
 }
 
-/* ===================== FILTER ===================== */
-const bulanNama=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-bulanNama.forEach((b,i)=>bulan.innerHTML+=`<option value="${i}">${b}</option>`);
-for(let y=2025;y<=2029;y++) tahun.innerHTML+=`<option>${y}</option>`;
+// ================= FILTER =================
+const bulanNama = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+bulanNama.forEach((b,i)=>bulan.innerHTML += `<option value="${i}">${b}</option>`);
+for(let y=2025;y<=2029;y++) tahun.innerHTML += `<option value="${y}">${y}</option>`;
 
-bulan.value=11;
-tahun.value=2025;
+bulan.value = 11;
+tahun.value = 2025;
 
-/* ===================== RENDER ===================== */
+// ================= RENDER =================
 function render(){
-  const tbody=document.querySelector("tbody");
-  tbody.innerHTML="";
-  const q=cari.value.toUpperCase();
+  tbody.innerHTML = "";
+  const q = cari.value.toUpperCase();
 
-  data.filter(x=>
-    x.bulan==bulan.value
+  data.filter(x =>
+    x.bulan == bulan.value &&
+    x.tahun == tahun.value &&
+    (q === "" || x.petugas.toUpperCase().includes(q))
+  ).forEach(x=>{
+    const tr = document.createElement("tr");
+    if(x.day === 5) tr.className = "jumat";
+    if(x.day === 0) tr.className = "minggu";
+    tr.innerHTML = `
+      <td>${x.tanggal}</td>
+      <td>${x.hari}</td>
+      <td>${x.petugas}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ================= EXPORT =================
+function exportCSV(){
+  let csv = "Tanggal,Hari,Petugas\n";
+  document.querySelectorAll("tbody tr").forEach(r=>{
+    csv += `${r.children[0].innerText},${r.children[1].innerText},${r.children[2].innerText}\n`;
+  });
+  download(csv,"jadwal_roan.csv","text/csv");
+}
+
+function exportExcel(){
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.table_to_sheet(document.getElementById("tabel"));
+  XLSX.utils.book_append_sheet(wb,ws,"Jadwal");
+  XLSX.writeFile(wb,"jadwal_roan.xlsx");
+}
+
+function download(content,filename,type){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = filename;
+  a.click();
+}
+
+// ================= AUTO LOAD =================
+render();
+</script>
+
+</body>
+</html>
