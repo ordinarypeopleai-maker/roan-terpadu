@@ -3,138 +3,104 @@
 <head>
 <meta charset="UTF-8">
 <title>Ro'an Terpadu</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <style>
-body{font-family:Segoe UI,Arial,sans-serif;margin:0;background:#f4f6f8}
+body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#f4f6f8}
 header{background:#0f4c75;color:#fff;padding:20px;text-align:center}
-main{padding:16px;max-width:1100px;margin:auto}
-.login{max-width:400px;margin:60px auto;background:#fff;padding:25px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.1)}
-.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-input,select,button{padding:8px 12px;font-size:14px;border-radius:6px;border:1px solid #ccc}
+main{max-width:1100px;margin:auto;padding:16px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+select,input,button{padding:8px 12px;border-radius:6px;border:1px solid #ccc;font-size:14px}
 button{background:#0f4c75;color:#fff;border:none;cursor:pointer}
-table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden}
 th,td{padding:10px;border-bottom:1px solid #eee;font-size:14px}
 th{background:#f0f2f5}
 tr:nth-child(even){background:#fafafa}
-.minggu{font-style:italic;color:#777}
 .jumat{font-weight:bold;color:#0f4c75}
-footer{text-align:center;font-size:12px;margin:16px 0;color:#777}
-@media print{.controls{display:none}}
+.minggu{font-style:italic;color:#777}
+footer{text-align:center;font-size:12px;margin:12px 0;color:#777}
 </style>
 </head>
+
 <body>
 
-<div id="login" class="login">
-<h2>Login Ro'an Terpadu</h2>
-<input id="username" placeholder="Nama pengguna" style="width:100%;margin-bottom:10px">
-<button onclick="login()" style="width:100%">Masuk</button>
-</div>
-
-<div id="app" style="display:none">
 <header>
 <h1>Ro'an Terpadu</h1>
 <p>Jadwal Ro'an TPS Desember 2025 – Desember 2029</p>
 </header>
 
 <main>
+
 <div class="controls">
 <select id="bulan"></select>
 <select id="tahun"></select>
-<input id="search" placeholder="Cari komplek">
+<input id="cari" placeholder="Cari Komplek">
 <button onclick="render()">Tampilkan</button>
-<button onclick="csv()">CSV</button>
-<button onclick="excel()">Excel</button>
-<button onclick="window.print()">Cetak</button>
-<button onclick="logout()">Logout</button>
+<button onclick="exportCSV()">CSV</button>
+<button onclick="exportExcel()">Excel</button>
 </div>
 
 <table id="tabel">
-<thead><tr><th>Tanggal</th><th>Hari</th><th>Petugas</th></tr></thead>
+<thead>
+<tr><th>Tanggal</th><th>Hari</th><th>Petugas</th></tr>
+</thead>
 <tbody></tbody>
 </table>
+
 <footer>© Ro'an Terpadu</footer>
 </main>
-</div>
 
 <script>
+/* ===================== DATA ===================== */
 const komplek=["A","B","C","D","E","F","G","H","I","J"];
 const data=[];
 
 let d=new Date(2025,11,1);
 const end=new Date(2029,11,31);
 
-let dailyIndex=4;
-let fridayIndex=4;
+let dailyIndex=4;   // E
+let fridayIndex=4;  // E
 
 while(d<=end){
   const day=d.getDay();
-  let pet="";
+  let petugas="";
+
   if(day===0){
-    pet="Pengurus kebersihan";
+    petugas="Pengurus kebersihan";
   }else if(day===5){
-    pet=komplek[fridayIndex%10];
+    petugas=komplek[fridayIndex%10];
     fridayIndex++;
   }else{
-    pet=komplek[dailyIndex%10];
+    petugas=komplek[dailyIndex%10];
     dailyIndex++;
   }
+
   data.push({
-    tgl:d.toLocaleDateString("id-ID"),
+    tanggal:d.toLocaleDateString("id-ID"),
     hari:d.toLocaleDateString("id-ID",{weekday:"long"}),
-    pet, bln:d.getMonth(), thn:d.getFullYear(), day
+    petugas,
+    bulan:d.getMonth(),
+    tahun:d.getFullYear(),
+    day
   });
+
   d.setDate(d.getDate()+1);
 }
 
+/* ===================== FILTER ===================== */
 const bulanNama=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 bulanNama.forEach((b,i)=>bulan.innerHTML+=`<option value="${i}">${b}</option>`);
 for(let y=2025;y<=2029;y++) tahun.innerHTML+=`<option>${y}</option>`;
-bulan.value=11; tahun.value=2025;
 
+bulan.value=11;
+tahun.value=2025;
+
+/* ===================== RENDER ===================== */
 function render(){
- tbody.innerHTML="";
- let q=search.value.toUpperCase();
- data.filter(x=>x.bln==bulan.value && x.thn==tahun.value && (q==""||x.pet.toUpperCase().includes(q)))
- .forEach(x=>{
-  let tr=document.createElement("tr");
-  if(x.day===0) tr.className="minggu";
-  if(x.day===5) tr.className="jumat";
-  tr.innerHTML=`<td>${x.tgl}</td><td>${x.hari}</td><td>${x.pet}</td>`;
-  tbody.appendChild(tr);
- });
-}
+  const tbody=document.querySelector("tbody");
+  tbody.innerHTML="";
+  const q=cari.value.toUpperCase();
 
-function csv(){
- let c="Tanggal,Hari,Petugas\\n";
- document.querySelectorAll("tbody tr").forEach(r=>{
-  let t=r.children;
-  c+=`${t[0].innerText},${t[1].innerText},${t[2].innerText}\\n`;
- });
- download(c,"jadwal_roan.csv","text/csv");
-}
-
-function excel(){
- let wb=XLSX.utils.book_new();
- let ws=XLSX.utils.table_to_sheet(document.getElementById("tabel"));
- XLSX.utils.book_append_sheet(wb,ws,"Jadwal");
- XLSX.writeFile(wb,"jadwal_roan.xlsx");
-}
-
-function download(c,n,t){
- let a=document.createElement("a");
- a.href=URL.createObjectURL(new Blob([c],{type:t}));
- a.download=n; a.click();
-}
-
-function login(){
- if(!username.value)return alert("Isi nama");
- localStorage.user=username.value;
- loginDiv.style.display="none"; app.style.display="block"; render();
-}
-function logout(){localStorage.clear();location.reload();}
-const loginDiv=document.getElementById("login");
-if(localStorage.user){loginDiv.style.display="none";app.style.display="block";render();}
-</script>
-</body>
-</html>
+  data.filter(x=>
+    x.bulan==bulan.value
