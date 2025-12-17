@@ -116,7 +116,8 @@ const cari=document.getElementById("cari");
 const tbody=document.querySelector("#tabel tbody");
 
 // ===== DATA =====
-const komplek=["A","B","C","D","E","F","G","H","I","J"];
+const komplekHarian = ["A","B","C","E","F","G","H","I","J"];
+const komplekJumat  = ["A","B","C","D","E","F","G","H","I","J"];
 const data=[];
 
 let d=new Date(2025,11,1);
@@ -129,8 +130,14 @@ while(d<=end){
   let pet="";
 
   if(day===0) pet="Pengurus kebersihan";
-  else if(day===5){pet=komplek[fridayIndex%10];fridayIndex++;}
-  else{pet=komplek[dailyIndex%10];dailyIndex++;}
+  else if(day === 5){
+  pet = komplekJumat[fridayIndex % komplekJumat.length];
+  fridayIndex++;
+}
+else{
+  pet = komplekHarian[dailyIndex % komplekHarian.length];
+  dailyIndex++;
+}
 
   data.push({
     tanggal:d.toLocaleDateString("id-ID"),
@@ -213,6 +220,7 @@ render();
 
 </body>
 </html>
+
 
 
 
